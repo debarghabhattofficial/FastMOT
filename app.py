@@ -98,7 +98,7 @@ def main():
 
                 if args.show:
                     cv2.imshow('Video', frame)
-                    if cv2.waitKey(1) & 0xFF == 27:
+                    if cv2.waitKey(100) & 0xFF == 27:
                         break
                 if args.output_uri is not None:
                     stream.write(frame)
