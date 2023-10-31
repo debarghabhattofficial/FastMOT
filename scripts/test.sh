@@ -4,6 +4,9 @@
 cd ..
 
 # Execute the python script.
+# NOTE:
+# Use --output-uri <output_path> to save output video to specific location.
+# Use --show to visulaize the output during testing.
 python app.py \
     --input-uri "input/wobble.avi" \
     --config "cfg/mot-osnet_x0_25_msmt17.json" \
