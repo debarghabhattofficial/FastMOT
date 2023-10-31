@@ -190,7 +190,27 @@ class MOT:
 
     def _draw(self, frame, detections):
         visible_tracks = list(self.visible_tracks())
-        self.visualizer.render(frame, visible_tracks, detections, self.tracker.klt_bboxes.values(),
-                               self.tracker.flow.prev_bg_keypoints, self.tracker.flow.bg_keypoints)
-        cv2.putText(frame, f'visible: {len(visible_tracks)}', (30, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, 0, 2, cv2.LINE_AA)
+        self.visualizer.render(
+            frame, 
+            visible_tracks, 
+            detections, 
+            self.tracker.klt_bboxes.values(),
+            self.tracker.flow.prev_bg_keypoints, 
+            self.tracker.flow.bg_keypoints
+        )
+        cv2.putText(
+            frame, 
+            f"visible: {len(visible_tracks)}", 
+            (30, 30),
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            1, 0, 2, 
+            cv2.LINE_AA
+        )
+        cv2.putText(
+            frame, 
+            f"frame: {self.frame_count}", 
+            (frame.shape[1] - 200, 30),
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            1, 0, 2, 
+            cv2.LINE_AA
+        )
