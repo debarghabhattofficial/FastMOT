@@ -6,10 +6,12 @@ cd ..
 # Execute the python script.
 python app.py \
     --input-uri "input/wobble.avi" \
-    --config "cfg/mot-monarch_default.json" \
+    --config "cfg/mot-osnet_x0_25_msmt17.json" \
     --mot \
-    --output-uri "results/input_wobble-config_mot_monarch_default-fr_100ms.mp4" \
-    --txt "results/input_wobble-config_mot_monarch_default-fr_100ms.txt" \
-    --show
+    --output-uri "results/code_test.mp4" \
+    --txt "results/code_test.txt"
+
+
+
 
 

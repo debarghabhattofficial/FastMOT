@@ -195,7 +195,13 @@ class MultiTracker:
             NxM matrix of N extracted embeddings with dimension M.
         """
         occluded_det_mask = find_occluded(detections.tlbr, self.occlusion_thresh)
+        print(f"oclluded_det_mask: \n{occluded_det_mask}")  # DEB
+        print("-" * 75)  # DEB
         confirmed_by_depth, unconfirmed = self._group_tracks_by_depth()
+        print(f"confirmed_by_depth: \n{confirmed_by_depth}")  # DEB
+        print("-" * 75)  # DEB
+        print(f"unconfirmed: \n{unconfirmed}")  # DEB
+        print("-" * 75)  # DEB
 
         # association with motion and embeddings, tracks with small age are prioritized
         matches1 = []
