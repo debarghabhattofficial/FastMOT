@@ -10,7 +10,9 @@ cd ..
 python app.py \
     --input-uri "input/wobble.avi" \
     --config "cfg/mot-osnet_x0_25_msmt17.json" \
-    --mot
+    --mot \
+    --output-uri "results/code_exp19.mp4" \
+    --show
 
 
 

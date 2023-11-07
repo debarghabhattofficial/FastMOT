@@ -194,14 +194,22 @@ class MultiTracker:
         embeddings : ndarray
             NxM matrix of N extracted embeddings with dimension M.
         """
-        occluded_det_mask = find_occluded(detections.tlbr, self.occlusion_thresh)
-        print(f"oclluded_det_mask: \n{occluded_det_mask}")  # DEB
+        occlusion_in_frame = False
+        occluded_det_mask, occlusion_pairs = find_occluded(detections.tlbr, self.occlusion_thresh)
+        print("\n\n")
+        print(f"FRAME: {frame_id} occluded_det_mask: \n{occluded_det_mask}")  # DEB
         print("-" * 75)  # DEB
+        print(f"FRAME {frame_id}: occlusion pairs: \n{occlusion_pairs}")  # DEB
+        print("-" * 75)  # DEB
+        if np.any(occluded_det_mask):
+            occlusion_in_frame = True
         confirmed_by_depth, unconfirmed = self._group_tracks_by_depth()
-        print(f"confirmed_by_depth: \n{confirmed_by_depth}")  # DEB
+        print(f"FRAME {frame_id}: confirmed_by_depth: \n{confirmed_by_depth}")  # DEB
         print("-" * 75)  # DEB
-        print(f"unconfirmed: \n{unconfirmed}")  # DEB
+        print(f"FRAME {frame_id}: unconfirmed: \n{unconfirmed}")  # DEB
         print("-" * 75)  # DEB
+
+        print(f"FRAME {frame_id}: detections: \n{detections}")  # DEB
 
         # association with motion and embeddings, tracks with small age are prioritized
         matches1 = []
@@ -210,6 +218,8 @@ class MultiTracker:
         for depth, trk_ids in enumerate(confirmed_by_depth):
             if len(u_det_ids) == 0:
                 u_trk_ids1.extend(itertools.chain.from_iterable(confirmed_by_depth[depth:]))
+                # print(f"u_trk_ids1 (in loop): \n{u_trk_ids1}")  # DEB
+                # print("-" * 75)  # DEB
                 break
             if len(trk_ids) == 0:
                 continue
@@ -220,21 +230,30 @@ class MultiTracker:
             matches1 += matches
             u_trk_ids1 += u_trk_ids
 
+        # print(f"u_trk_ids1: \n{u_trk_ids1}")  # DEB
+        # print("-" * 75)  # DEB
         # 2nd association with IoU
         active = [trk_id for trk_id in u_trk_ids1 if self.tracks[trk_id].active]
         u_trk_ids1 = [trk_id for trk_id in u_trk_ids1 if not self.tracks[trk_id].active]
         u_detections = detections[u_det_ids]
         cost = self._iou_cost(active, u_detections)
         matches2, u_trk_ids2, u_det_ids = linear_assignment(cost, active, u_det_ids)
+        # print(f"u_trk_ids2: \n{u_trk_ids2}")  # DEB
+        # print("-" * 75)  # DEB
 
         # 3rd association with unconfirmed tracks
         u_detections = detections[u_det_ids]
         cost = self._iou_cost(unconfirmed, u_detections)
         matches3, u_trk_ids3, u_det_ids = linear_assignment(cost, unconfirmed, u_det_ids)
+        # print(f"u_trk_ids3: \n{u_trk_ids3}")  # DEB
+        # print("-" * 75)  # DEB
 
         # reID with track history
-        hist_ids = [trk_id for trk_id, track in self.hist_tracks.items()
-                    if track.avg_feat.count >= 2]
+        hist_ids = [
+            trk_id 
+            for trk_id, track in self.hist_tracks.items()
+            if track.avg_feat.count >= 2
+        ]
 
         u_det_ids = [det_id for det_id in u_det_ids if detections[det_id].conf >= self.conf_thresh]
         valid_u_det_ids = [det_id for det_id in u_det_ids if not occluded_det_mask[det_id]]
@@ -298,6 +317,10 @@ class MultiTracker:
             self.tracks[new_trk.trk_id] = new_trk
             LOGGER.debug(f"{'Detected:':<14}{new_trk}")
 
+        # Return information to the calling function about whether any
+        # occlusion was detected in the current frame.
+        return occlusion_in_frame
+
     def _mark_lost(self, trk_id):
         track = self.tracks.pop(trk_id)
         if track.confirmed:
@@ -326,6 +349,8 @@ class MultiTracker:
         invalid_fmask = np.zeros(n_trk, np.bool_)
         for i, trk_id in enumerate(trk_ids):
             track = self.tracks[trk_id]
+            print(f"track: \n{track}")  # DEB
+            print("-" * 75)  # DEB
             if track.avg_feat.is_valid():
                 features[i, :] = track.avg_feat()
             else:
@@ -333,7 +358,12 @@ class MultiTracker:
 
         empty_mask = invalid_fmask[:, None] | occluded_dmask
         fill_val = min(self.max_assoc_cost + 0.1, 1.)
+        # NOTE: Make changes here. Specifically, update the embeddings array such that
+        # the embeddings of the people participating in the occlusion relationship
+        # do not get updated.
         cost = cdist(features, embeddings, self.metric, empty_mask, fill_val)
+        print(f"cost: \n{cost}")  # DEB
+        print("-" * 75)  # DEB
 
         # fuse motion information
         for row, trk_id in enumerate(trk_ids):

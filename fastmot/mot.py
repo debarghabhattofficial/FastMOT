@@ -130,6 +130,7 @@ class MOT:
         frame : ndarray
             The next frame.
         """
+        occlusion_in_frame = False
         detections = []
         if self.frame_count == 0:
             detections = self.detector(frame)
@@ -158,13 +159,13 @@ class MOT:
                 embeddings = np.concatenate(embeddings) if len(embeddings) > 1 else embeddings[0]
 
             with Profiler('assoc'):
-                self.tracker.update(self.frame_count, detections, embeddings)
+                occlusion_in_frame = self.tracker.update(self.frame_count, detections, embeddings)
         else:
             with Profiler('track'):
                 self.tracker.track(frame)
 
         if self.draw:
-            self._draw(frame, detections)
+            self._draw(frame, detections, occlusion_in_frame)
         self.frame_count += 1
 
     @staticmethod
@@ -188,7 +189,7 @@ class MOT:
             begin = end
         return cls_bboxes
 
-    def _draw(self, frame, detections):
+    def _draw(self, frame, detections, occlusion_in_frame=False):
         visible_tracks = list(self.visible_tracks())
         self.visualizer.render(
             frame, 
@@ -214,3 +215,12 @@ class MOT:
             1, 0, 2, 
             cv2.LINE_AA
         )
+        if occlusion_in_frame:
+            cv2.putText(
+                frame, 
+                "occlusion!", 
+                (frame.shape[1] - 200, 60),
+                cv2.FONT_HERSHEY_SIMPLEX, 
+                1, 0, 2, 
+                cv2.LINE_AA
+            )
