@@ -82,7 +82,9 @@ class TRTInference:
             self.bindings.append(buffer.devptr)
             if self.engine.binding_is_input(binding):
                 if not self.engine.has_implicit_batch_dimension:
-                    assert self.batch_size == shape[0]
+                    msg = "-" * 10 + f"Batch size: {batch_size}, Shape[0]: {shape[0]}" + "-" * 10  # DEB
+                    assert self.batch_size == shape[0], msg  # DEB
+                    # assert self.batch_size == shape[0], msg  # ORIGINAL
                 # expect one input
                 self.input = buffer
             else:

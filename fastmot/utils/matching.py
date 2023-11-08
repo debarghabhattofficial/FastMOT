@@ -23,6 +23,8 @@ def linear_assignment(cost, row_ids, col_ids):
     -------
     List[tuple], List[int], List[int]
         Matched row and column IDs, unmatched row IDs, and unmatched column IDs.
+
+    NOTE: This is the Hungarian algorithm implementation of Scipy.
     """
     m_rows, m_cols = linear_sum_assignment(cost)
     row_ids = np.fromiter(row_ids, int, len(row_ids))

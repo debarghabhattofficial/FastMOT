@@ -1,0 +1,64 @@
+&&&& RUNNING TensorRT.trtexec # trtexec --onnx=osnet_x0_25_msmt17-2.onnx --saveEngine=osnet_x0_25_msmt17-2.trt
+[10/27/2023-14:45:28] [I] === Model Options ===
+[10/27/2023-14:45:28] [I] Format: ONNX
+[10/27/2023-14:45:28] [I] Model: osnet_x0_25_msmt17-2.onnx
+[10/27/2023-14:45:28] [I] Output:
+[10/27/2023-14:45:28] [I] === Build Options ===
+[10/27/2023-14:45:28] [I] Max batch: explicit
+[10/27/2023-14:45:28] [I] Workspace: 16 MiB
+[10/27/2023-14:45:28] [I] minTiming: 1
+[10/27/2023-14:45:28] [I] avgTiming: 8
+[10/27/2023-14:45:28] [I] Precision: FP32
+[10/27/2023-14:45:28] [I] Calibration: 
+[10/27/2023-14:45:28] [I] Refit: Disabled
+[10/27/2023-14:45:28] [I] Safe mode: Disabled
+[10/27/2023-14:45:28] [I] Save engine: osnet_x0_25_msmt17-2.trt
+[10/27/2023-14:45:28] [I] Load engine: 
+[10/27/2023-14:45:28] [I] Builder Cache: Enabled
+[10/27/2023-14:45:28] [I] NVTX verbosity: 0
+[10/27/2023-14:45:28] [I] Tactic sources: Using default tactic sources
+[10/27/2023-14:45:28] [I] Input(s)s format: fp32:CHW
+[10/27/2023-14:45:28] [I] Output(s)s format: fp32:CHW
+[10/27/2023-14:45:28] [I] Input build shapes: model
+[10/27/2023-14:45:28] [I] Input calibration shapes: model
+[10/27/2023-14:45:28] [I] === System Options ===
+[10/27/2023-14:45:28] [I] Device: 0
+[10/27/2023-14:45:28] [I] DLACore: 
+[10/27/2023-14:45:28] [I] Plugins:
+[10/27/2023-14:45:28] [I] === Inference Options ===
+[10/27/2023-14:45:28] [I] Batch: Explicit
+[10/27/2023-14:45:28] [I] Input inference shapes: model
+[10/27/2023-14:45:28] [I] Iterations: 10
+[10/27/2023-14:45:28] [I] Duration: 3s (+ 200ms warm up)
+[10/27/2023-14:45:28] [I] Sleep time: 0ms
+[10/27/2023-14:45:28] [I] Streams: 1
+[10/27/2023-14:45:28] [I] ExposeDMA: Disabled
+[10/27/2023-14:45:28] [I] Data transfers: Enabled
+[10/27/2023-14:45:28] [I] Spin-wait: Disabled
+[10/27/2023-14:45:28] [I] Multithreading: Disabled
+[10/27/2023-14:45:28] [I] CUDA Graph: Disabled
+[10/27/2023-14:45:28] [I] Separate profiling: Disabled
+[10/27/2023-14:45:28] [I] Skip inference: Disabled
+[10/27/2023-14:45:28] [I] Inputs:
+[10/27/2023-14:45:28] [I] === Reporting Options ===
+[10/27/2023-14:45:28] [I] Verbose: Disabled
+[10/27/2023-14:45:28] [I] Averages: 10 inferences
+[10/27/2023-14:45:28] [I] Percentile: 99
+[10/27/2023-14:45:28] [I] Dump refittable layers:Disabled
+[10/27/2023-14:45:28] [I] Dump output: Disabled
+[10/27/2023-14:45:28] [I] Profile: Disabled
+[10/27/2023-14:45:28] [I] Export timing to JSON file: 
+[10/27/2023-14:45:28] [I] Export output to JSON file: 
+[10/27/2023-14:45:28] [I] Export profile to JSON file: 
+[10/27/2023-14:45:28] [I] 
+[10/27/2023-14:45:28] [I] === Device Information ===
+[10/27/2023-14:45:28] [I] Selected Device: NVIDIA GeForce RTX 3070 Laptop GPU
+[10/27/2023-14:45:28] [I] Compute Capability: 8.6
+[10/27/2023-14:45:28] [I] SMs: 40
+[10/27/2023-14:45:28] [I] Compute Clock Rate: 1.41 GHz
+[10/27/2023-14:45:28] [I] Device Global Memory: 7973 MiB
+[10/27/2023-14:45:28] [I] Shared Memory per SM: 100 KiB
+[10/27/2023-14:45:28] [I] Memory Bus Width: 256 bits (ECC disabled)
+[10/27/2023-14:45:28] [I] Memory Clock Rate: 6.001 GHz
+[10/27/2023-14:45:28] [I] 
+[10/27/2023-14:45:34] [10/27/2023-14:45:34] [10/27/2023-14:45:34] [10/27/2023-14:45:34] [10/27/2023-14:45:34] &&&& FAILED TensorRT.trtexec # trtexec --onnx=osnet_x0_25_msmt17-2.onnx --saveEngine=osnet_x0_25_msmt17-2.trt

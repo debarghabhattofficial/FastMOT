@@ -142,7 +142,15 @@ def bbox_ious(tlbrs1, tlbrs2):
 @nb.njit(parallel=False, fastmath=True, cache=True)
 def find_occluded(tlbrs, occlusion_thresh):
     """Computes a mask of occluded bounding boxes."""
+    # print(f"tlbrs:")
+    # print(tlbrs)
+    # print("-" * 75)  # DEB
+    
     occluded_mask = np.zeros(tlbrs.shape[0], dtype=np.bool_)
+    # Each pair in the occlusion pair is a tuple of two elements where the first
+    # element is the index of the detected person getting occluded, and the second
+    # element is the index of the detected person occluding the first. 
+    occlusion_pairs = []  # DEB
     for i in nb.prange(tlbrs.shape[0]):
         area_self = area(tlbrs[i, :])
         for j in range(tlbrs.shape[0]):
@@ -153,8 +161,15 @@ def find_occluded(tlbrs, occlusion_thresh):
                     ios = iw * ih / area_self
                     if ios >= occlusion_thresh:
                         occluded_mask[i] = True
+                        occluded_mask[j] = True  # DEB
+                        occlusion_pairs.append((i, j))  # DEB
                         break
-    return occluded_mask
+    # print(f"occluded_mask: ")  # DEB
+    # print(occluded_mask)  # DEB
+    # print("-" * 75)  # DEB
+    # print()  # DEB
+
+    return occluded_mask, occlusion_pairs
 
 
 @nb.njit(fastmath=True, cache=True)
@@ -177,7 +192,7 @@ def nms(tlwhs, scores, nms_thresh):
         other_tls = tls[ordered[1:]]
         other_brs = brs[ordered[1:]]
 
-        # compute IoU
+       # compute IoU
         inter_xmin = np.maximum(tls[i, 0], other_tls[:, 0])
         inter_ymin = np.maximum(tls[i, 1], other_tls[:, 1])
         inter_xmax = np.minimum(brs[i, 0], other_brs[:, 0])

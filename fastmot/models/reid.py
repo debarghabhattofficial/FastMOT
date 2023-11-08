@@ -92,12 +92,22 @@ class ReID:
             return engine
 
 
+# ORIGINAL
+# class OSNet025(ReID):
+#     ENGINE_PATH = Path(__file__).parent / 'osnet_x0_25_msmt17.trt'
+#     MODEL_PATH = Path(__file__).parent / 'osnet_x0_25_msmt17.onnx'
+#     INPUT_SHAPE = (3, 256, 128)
+#     OUTPUT_LAYOUT = 512
+#     METRIC = 'euclidean'
+
+
+# DEB
 class OSNet025(ReID):
     ENGINE_PATH = Path(__file__).parent / 'osnet_x0_25_msmt17.trt'
     MODEL_PATH = Path(__file__).parent / 'osnet_x0_25_msmt17.onnx'
     INPUT_SHAPE = (3, 256, 128)
     OUTPUT_LAYOUT = 512
-    METRIC = 'euclidean'
+    METRIC = "euclidean"
 
 
 class OSNet10(ReID):
@@ -107,3 +117,22 @@ class OSNet10(ReID):
     INPUT_SHAPE = (3, 256, 128)
     OUTPUT_LAYOUT = 512
     METRIC = 'cosine'
+
+
+class OSNetAIN10(ReID):
+    """Multi-source model trained on MSMT17, DukeMTMC, and CUHK03, not provided."""
+    ENGINE_PATH = Path(__file__).parent / 'osnet_ain_x1_0_msdc.trt'
+    MODEL_PATH = Path(__file__).parent / 'osnet_ain_x1_0_msdc.onnx'
+    INPUT_SHAPE = (3, 256, 128)
+    OUTPUT_LAYOUT = 512
+    METRIC = "euclidean"  # "cosine"
+
+
+class ReSNetFC512(ReID):
+    ENGINE_PATH = Path(__file__).parent / 'resnet50_fc512_msmt17.trt'
+    MODEL_PATH = Path(__file__).parent / 'resnet50_fc512_msmt17.onnx'
+    INPUT_SHAPE = (3, 256, 128)
+    OUTPUT_LAYOUT = 512
+    METRIC = "euclidean"
+
+

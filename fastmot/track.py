@@ -106,7 +106,9 @@ class AverageFeature:
             self.sum = embedding.copy()
             self.avg = embedding.copy()
         else:
+            # print("x" * 10 + f" self.avg (BEFORE UPDATE): {self.avg} " + "x" * 10)  # DEB
             self._average(self.sum, self.avg, embedding, self.count)
+            # print("x" * 10 + f" self.avg (AFTER UPDATE): {self.avg} " + "x" * 10)  # DEB
 
     def merge(self, other):
         self.count += other.count
@@ -114,7 +116,9 @@ class AverageFeature:
             self.sum = other.sum
             self.avg = other.avg
         elif other.sum is not None:
+            # print("x" * 10 + f" self.avg (BEFORE MERGE): {self.avg} " + "x" * 10)  # DEB
             self._average(self.sum, self.avg, other.sum, self.count)
+            # print("x" * 10 + f" self.avg (AFTER MERGE): {self.avg} " + "x" * 10)  # DEB
 
     @staticmethod
     @nb.njit(fastmath=True, cache=True)
@@ -178,8 +182,16 @@ class Track:
         return self.hits >= self.confirm_hits
 
     def update(self, tlbr, state):
+        print(f"self.trk_id: {self.trk_id}")
+        print("-" * 75)
         self.bboxes.append(tlbr)
+        print(f"tlbr: \n{tlbr}")  # DEB
+        print(f"self.bboxes: \n{self.bboxes}")  # DEB
+        print("-" * 75)  # DEB
         self.state = state
+        print(f"self.state: \n{self.state}")  # DEB
+        print("-" * 75)  # DEB
+
 
     def add_detection(self, frame_id, tlbr, state, embedding, is_valid=True):
         self.frame_ids.append(frame_id)

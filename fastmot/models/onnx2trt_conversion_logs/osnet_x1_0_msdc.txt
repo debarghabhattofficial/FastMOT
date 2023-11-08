@@ -1,0 +1,130 @@
+&&&& RUNNING TensorRT.trtexec # trtexec --onnx=../fastmot/models/osnet_x1_0_msdc.onnx --shapes=images:16x3x256x128 --saveEngine=../fastmot/models/osnet_x1_0_msdc.trt
+[10/27/2023-15:18:46] [I] === Model Options ===
+[10/27/2023-15:18:46] [I] Format: ONNX
+[10/27/2023-15:18:46] [I] Model: ../fastmot/models/osnet_x1_0_msdc.onnx
+[10/27/2023-15:18:46] [I] Output:
+[10/27/2023-15:18:46] [I] === Build Options ===
+[10/27/2023-15:18:46] [I] Max batch: explicit
+[10/27/2023-15:18:46] [I] Workspace: 16 MiB
+[10/27/2023-15:18:46] [I] minTiming: 1
+[10/27/2023-15:18:46] [I] avgTiming: 8
+[10/27/2023-15:18:46] [I] Precision: FP32
+[10/27/2023-15:18:46] [I] Calibration: 
+[10/27/2023-15:18:46] [I] Refit: Disabled
+[10/27/2023-15:18:46] [I] Safe mode: Disabled
+[10/27/2023-15:18:46] [I] Save engine: ../fastmot/models/osnet_x1_0_msdc.trt
+[10/27/2023-15:18:46] [I] Load engine: 
+[10/27/2023-15:18:46] [I] Builder Cache: Enabled
+[10/27/2023-15:18:46] [I] NVTX verbosity: 0
+[10/27/2023-15:18:46] [I] Tactic sources: Using default tactic sources
+[10/27/2023-15:18:46] [I] Input(s)s format: fp32:CHW
+[10/27/2023-15:18:46] [I] Output(s)s format: fp32:CHW
+[10/27/2023-15:18:46] [I] Input build shape: images=16x3x256x128+16x3x256x128+16x3x256x128
+[10/27/2023-15:18:46] [I] Input calibration shapes: model
+[10/27/2023-15:18:46] [I] === System Options ===
+[10/27/2023-15:18:46] [I] Device: 0
+[10/27/2023-15:18:46] [I] DLACore: 
+[10/27/2023-15:18:46] [I] Plugins:
+[10/27/2023-15:18:46] [I] === Inference Options ===
+[10/27/2023-15:18:46] [I] Batch: Explicit
+[10/27/2023-15:18:46] [I] Input inference shape: images=16x3x256x128
+[10/27/2023-15:18:46] [I] Iterations: 10
+[10/27/2023-15:18:46] [I] Duration: 3s (+ 200ms warm up)
+[10/27/2023-15:18:46] [I] Sleep time: 0ms
+[10/27/2023-15:18:46] [I] Streams: 1
+[10/27/2023-15:18:46] [I] ExposeDMA: Disabled
+[10/27/2023-15:18:46] [I] Data transfers: Enabled
+[10/27/2023-15:18:46] [I] Spin-wait: Disabled
+[10/27/2023-15:18:46] [I] Multithreading: Disabled
+[10/27/2023-15:18:46] [I] CUDA Graph: Disabled
+[10/27/2023-15:18:46] [I] Separate profiling: Disabled
+[10/27/2023-15:18:46] [I] Skip inference: Disabled
+[10/27/2023-15:18:46] [I] Inputs:
+[10/27/2023-15:18:46] [I] === Reporting Options ===
+[10/27/2023-15:18:46] [I] Verbose: Disabled
+[10/27/2023-15:18:46] [I] Averages: 10 inferences
+[10/27/2023-15:18:46] [I] Percentile: 99
+[10/27/2023-15:18:46] [I] Dump refittable layers:Disabled
+[10/27/2023-15:18:46] [I] Dump output: Disabled
+[10/27/2023-15:18:46] [I] Profile: Disabled
+[10/27/2023-15:18:46] [I] Export timing to JSON file: 
+[10/27/2023-15:18:46] [I] Export output to JSON file: 
+[10/27/2023-15:18:46] [I] Export profile to JSON file: 
+[10/27/2023-15:18:46] [I] 
+[10/27/2023-15:18:47] [I] === Device Information ===
+[10/27/2023-15:18:47] [I] Selected Device: NVIDIA GeForce RTX 3070 Laptop GPU
+[10/27/2023-15:18:47] [I] Compute Capability: 8.6
+[10/27/2023-15:18:47] [I] SMs: 40
+[10/27/2023-15:18:47] [I] Compute Clock Rate: 1.41 GHz
+[10/27/2023-15:18:47] [I] Device Global Memory: 7973 MiB
+[10/27/2023-15:18:47] [I] Shared Memory per SM: 100 KiB
+[10/27/2023-15:18:47] [I] Memory Bus Width: 256 bits (ECC disabled)
+[10/27/2023-15:18:47] [I] Memory Clock Rate: 6.001 GHz
+[10/27/2023-15:18:47] [I] 
+[10/27/2023-15:18:52] [I] [TRT] ----------------------------------------------------------------
+[10/27/2023-15:18:52] [I] [TRT] Input filename:   ../fastmot/models/osnet_x1_0_msdc.onnx
+[10/27/2023-15:18:52] [I] [TRT] ONNX IR version:  0.0.7
+[10/27/2023-15:18:52] [I] [TRT] Opset version:    12
+[10/27/2023-15:18:52] [I] [TRT] Producer name:    pytorch
+[10/27/2023-15:18:52] [I] [TRT] Producer version: 2.1.0
+[10/27/2023-15:18:52] [I] [TRT] Domain:           
+[10/27/2023-15:18:52] [I] [TRT] Model version:    0
+[10/27/2023-15:18:52] [I] [TRT] Doc string:       
+[10/27/2023-15:18:52] [I] [TRT] ----------------------------------------------------------------
+[10/27/2023-15:18:52] [10/27/2023-15:18:54] [I] [TRT] Some tactics do not have sufficient workspace memory to run. Increasing workspace size may increase performance, please check verbose output.
+[10/27/2023-15:19:26] [I] [TRT] Detected 1 inputs and 1 output network tensors.
+[10/27/2023-15:19:27] [I] Engine built in 40.0222 sec.
+[10/27/2023-15:19:27] [I] Starting inference
+[10/27/2023-15:19:30] [I] Warmup completed 0 queries over 200 ms
+[10/27/2023-15:19:30] [I] Timing trace has 0 queries over 3.03401 s
+[10/27/2023-15:19:30] [I] Trace averages of 10 runs:
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.6982 ms - Host latency: 10.0477 ms (end to end 19.0767 ms, enqueue 1.76994 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.84535 ms - Host latency: 10.1653 ms (end to end 19.4162 ms, enqueue 1.10641 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.81668 ms - Host latency: 10.1342 ms (end to end 19.3598 ms, enqueue 1.19282 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.85448 ms - Host latency: 10.2065 ms (end to end 19.3707 ms, enqueue 1.81412 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.80919 ms - Host latency: 10.1984 ms (end to end 19.2095 ms, enqueue 1.85552 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.84393 ms - Host latency: 10.1891 ms (end to end 19.3348 ms, enqueue 1.77 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 10.0618 ms - Host latency: 10.4937 ms (end to end 19.6899 ms, enqueue 1.8106 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 10.172 ms - Host latency: 10.5569 ms (end to end 20.1193 ms, enqueue 1.76993 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.81032 ms - Host latency: 10.1306 ms (end to end 19.3162 ms, enqueue 1.37488 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.8979 ms - Host latency: 10.2544 ms (end to end 19.5558 ms, enqueue 1.64659 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.74602 ms - Host latency: 10.0758 ms (end to end 19.1783 ms, enqueue 1.29912 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.83593 ms - Host latency: 10.1676 ms (end to end 19.3903 ms, enqueue 1.54799 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.76289 ms - Host latency: 10.1242 ms (end to end 19.2736 ms, enqueue 1.96218 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.91582 ms - Host latency: 10.2602 ms (end to end 19.4943 ms, enqueue 1.80964 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.80756 ms - Host latency: 10.1595 ms (end to end 19.3269 ms, enqueue 1.83801 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.83407 ms - Host latency: 10.1905 ms (end to end 19.3734 ms, enqueue 1.83168 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 10.0963 ms - Host latency: 10.4328 ms (end to end 19.8594 ms, enqueue 1.72203 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.98582 ms - Host latency: 10.3443 ms (end to end 19.6497 ms, enqueue 1.78542 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.86528 ms - Host latency: 10.2049 ms (end to end 19.4286 ms, enqueue 1.7802 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.90664 ms - Host latency: 10.2464 ms (end to end 19.4752 ms, enqueue 1.72217 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.80442 ms - Host latency: 10.1549 ms (end to end 19.3304 ms, enqueue 1.65413 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.89636 ms - Host latency: 10.225 ms (end to end 19.3585 ms, enqueue 1.63762 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.80339 ms - Host latency: 10.1494 ms (end to end 19.3331 ms, enqueue 1.73591 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.89868 ms - Host latency: 10.2399 ms (end to end 19.4695 ms, enqueue 1.71914 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.81096 ms - Host latency: 10.138 ms (end to end 19.4031 ms, enqueue 1.30469 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.93218 ms - Host latency: 10.2938 ms (end to end 19.5775 ms, enqueue 1.74055 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.96465 ms - Host latency: 10.3082 ms (end to end 19.6438 ms, enqueue 1.76509 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.99033 ms - Host latency: 10.356 ms (end to end 19.6511 ms, enqueue 1.77852 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.89656 ms - Host latency: 10.2698 ms (end to end 19.5323 ms, enqueue 1.81248 ms)
+[10/27/2023-15:19:30] [I] Average on 10 runs - GPU latency: 9.87017 ms - Host latency: 10.2226 ms (end to end 19.4777 ms, enqueue 1.75437 ms)
+[10/27/2023-15:19:30] [I] Host Latency
+[10/27/2023-15:19:30] [I] min: 9.6973 ms (end to end 18.7288 ms)
+[10/27/2023-15:19:30] [I] max: 11.1243 ms (end to end 20.8959 ms)
+[10/27/2023-15:19:30] [I] mean: 10.2318 ms (end to end 19.454 ms)
+[10/27/2023-15:19:30] [I] median: 10.213 ms (end to end 19.3905 ms)
+[10/27/2023-15:19:30] [I] percentile: 11.0729 ms at 99% (end to end 20.6722 ms at 99%)
+[10/27/2023-15:19:30] [I] throughput: 0 qps
+[10/27/2023-15:19:30] [I] walltime: 3.03401 s
+[10/27/2023-15:19:30] [I] Enqueue Time
+[10/27/2023-15:19:30] [I] min: 0.398315 ms
+[10/27/2023-15:19:30] [I] max: 2.73254 ms
+[10/27/2023-15:19:30] [I] median: 1.75308 ms
+[10/27/2023-15:19:30] [I] GPU Compute
+[10/27/2023-15:19:30] [I] min: 9.42078 ms
+[10/27/2023-15:19:30] [I] max: 10.798 ms
+[10/27/2023-15:19:30] [I] mean: 9.88183 ms
+[10/27/2023-15:19:30] [I] median: 9.86676 ms
+[10/27/2023-15:19:30] [I] percentile: 10.626 ms at 99%
+[10/27/2023-15:19:30] [I] total compute time: 3.02384 s
+&&&& PASSED TensorRT.trtexec # trtexec --onnx=../fastmot/models/osnet_x1_0_msdc.onnx --shapes=images:16x3x256x128 --saveEngine=../fastmot/models/osnet_x1_0_msdc.trt

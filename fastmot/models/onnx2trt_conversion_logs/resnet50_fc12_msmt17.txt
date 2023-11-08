@@ -1,0 +1,64 @@
+&&&& RUNNING TensorRT.trtexec # trtexec --onnx=../fastmot/models/resnet50_fc12_msmt17.onnx --shapes=images:16x3x256x128 --saveEngine=../fastmot/models/resnet50_fc12_msmt17.trt
+[11/06/2023-08:32:15] [I] === Model Options ===
+[11/06/2023-08:32:15] [I] Format: ONNX
+[11/06/2023-08:32:15] [I] Model: ../fastmot/models/resnet50_fc12_msmt17.onnx
+[11/06/2023-08:32:15] [I] Output:
+[11/06/2023-08:32:15] [I] === Build Options ===
+[11/06/2023-08:32:15] [I] Max batch: explicit
+[11/06/2023-08:32:15] [I] Workspace: 16 MiB
+[11/06/2023-08:32:15] [I] minTiming: 1
+[11/06/2023-08:32:15] [I] avgTiming: 8
+[11/06/2023-08:32:15] [I] Precision: FP32
+[11/06/2023-08:32:15] [I] Calibration: 
+[11/06/2023-08:32:15] [I] Refit: Disabled
+[11/06/2023-08:32:15] [I] Safe mode: Disabled
+[11/06/2023-08:32:15] [I] Save engine: ../fastmot/models/resnet50_fc12_msmt17.trt
+[11/06/2023-08:32:15] [I] Load engine: 
+[11/06/2023-08:32:15] [I] Builder Cache: Enabled
+[11/06/2023-08:32:15] [I] NVTX verbosity: 0
+[11/06/2023-08:32:15] [I] Tactic sources: Using default tactic sources
+[11/06/2023-08:32:15] [I] Input(s)s format: fp32:CHW
+[11/06/2023-08:32:15] [I] Output(s)s format: fp32:CHW
+[11/06/2023-08:32:15] [I] Input build shape: images=16x3x256x128+16x3x256x128+16x3x256x128
+[11/06/2023-08:32:15] [I] Input calibration shapes: model
+[11/06/2023-08:32:15] [I] === System Options ===
+[11/06/2023-08:32:15] [I] Device: 0
+[11/06/2023-08:32:15] [I] DLACore: 
+[11/06/2023-08:32:15] [I] Plugins:
+[11/06/2023-08:32:15] [I] === Inference Options ===
+[11/06/2023-08:32:15] [I] Batch: Explicit
+[11/06/2023-08:32:15] [I] Input inference shape: images=16x3x256x128
+[11/06/2023-08:32:15] [I] Iterations: 10
+[11/06/2023-08:32:15] [I] Duration: 3s (+ 200ms warm up)
+[11/06/2023-08:32:15] [I] Sleep time: 0ms
+[11/06/2023-08:32:15] [I] Streams: 1
+[11/06/2023-08:32:15] [I] ExposeDMA: Disabled
+[11/06/2023-08:32:15] [I] Data transfers: Enabled
+[11/06/2023-08:32:15] [I] Spin-wait: Disabled
+[11/06/2023-08:32:15] [I] Multithreading: Disabled
+[11/06/2023-08:32:15] [I] CUDA Graph: Disabled
+[11/06/2023-08:32:15] [I] Separate profiling: Disabled
+[11/06/2023-08:32:15] [I] Skip inference: Disabled
+[11/06/2023-08:32:15] [I] Inputs:
+[11/06/2023-08:32:15] [I] === Reporting Options ===
+[11/06/2023-08:32:15] [I] Verbose: Disabled
+[11/06/2023-08:32:15] [I] Averages: 10 inferences
+[11/06/2023-08:32:15] [I] Percentile: 99
+[11/06/2023-08:32:15] [I] Dump refittable layers:Disabled
+[11/06/2023-08:32:15] [I] Dump output: Disabled
+[11/06/2023-08:32:15] [I] Profile: Disabled
+[11/06/2023-08:32:15] [I] Export timing to JSON file: 
+[11/06/2023-08:32:15] [I] Export output to JSON file: 
+[11/06/2023-08:32:15] [I] Export profile to JSON file: 
+[11/06/2023-08:32:15] [I] 
+[11/06/2023-08:32:15] [I] === Device Information ===
+[11/06/2023-08:32:15] [I] Selected Device: NVIDIA GeForce RTX 3070 Laptop GPU
+[11/06/2023-08:32:15] [I] Compute Capability: 8.6
+[11/06/2023-08:32:15] [I] SMs: 40
+[11/06/2023-08:32:15] [I] Compute Clock Rate: 1.41 GHz
+[11/06/2023-08:32:15] [I] Device Global Memory: 7973 MiB
+[11/06/2023-08:32:15] [I] Shared Memory per SM: 100 KiB
+[11/06/2023-08:32:15] [I] Memory Bus Width: 256 bits (ECC disabled)
+[11/06/2023-08:32:15] [I] Memory Clock Rate: 6.001 GHz
+[11/06/2023-08:32:15] [I] 
+[11/06/2023-08:32:21] [11/06/2023-08:32:21] [11/06/2023-08:32:21] [11/06/2023-08:32:21] [11/06/2023-08:32:21] &&&& FAILED TensorRT.trtexec # trtexec --onnx=../fastmot/models/resnet50_fc12_msmt17.onnx --shapes=images:16x3x256x128 --saveEngine=../fastmot/models/resnet50_fc12_msmt17.trt
