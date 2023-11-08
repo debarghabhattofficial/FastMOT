@@ -92,16 +92,6 @@ class ReID:
             return engine
 
 
-# ORIGINAL
-# class OSNet025(ReID):
-#     ENGINE_PATH = Path(__file__).parent / 'osnet_x0_25_msmt17.trt'
-#     MODEL_PATH = Path(__file__).parent / 'osnet_x0_25_msmt17.onnx'
-#     INPUT_SHAPE = (3, 256, 128)
-#     OUTPUT_LAYOUT = 512
-#     METRIC = 'euclidean'
-
-
-# DEB
 class OSNet025(ReID):
     ENGINE_PATH = Path(__file__).parent / 'osnet_x0_25_msmt17.trt'
     MODEL_PATH = Path(__file__).parent / 'osnet_x0_25_msmt17.onnx'
@@ -125,7 +115,7 @@ class OSNetAIN10(ReID):
     MODEL_PATH = Path(__file__).parent / 'osnet_ain_x1_0_msdc.onnx'
     INPUT_SHAPE = (3, 256, 128)
     OUTPUT_LAYOUT = 512
-    METRIC = "euclidean"  # "cosine"
+    METRIC = "euclidean"
 
 
 class ReSNetFC512(ReID):
