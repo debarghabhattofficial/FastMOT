@@ -207,6 +207,8 @@ class MOT:
             1, 0, 2, 
             cv2.LINE_AA
         )
+        # Following line of code prints the frame
+        # no. on the output frame.
         cv2.putText(
             frame, 
             f"frame: {self.frame_count}", 
@@ -215,6 +217,9 @@ class MOT:
             1, 0, 2, 
             cv2.LINE_AA
         )
+        # Following line of code prints occlusion
+        # there is a occlusion event, i.e., two or
+        # more people moving past each other.
         if occlusion_in_frame:
             cv2.putText(
                 frame, 

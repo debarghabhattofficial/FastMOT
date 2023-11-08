@@ -194,7 +194,7 @@ class MultiTracker:
         embeddings : ndarray
             NxM matrix of N extracted embeddings with dimension M.
         """
-        occlusion_in_frame = False
+        occlusion_in_frame = False # Tracks occlusion event in input frames.
         occluded_det_mask = find_occluded(detections.tlbr, self.occlusion_thresh)
         if np.any(occluded_det_mask):
             occlusion_in_frame = True

@@ -153,8 +153,8 @@ def find_occluded(tlbrs, occlusion_thresh):
                     ios = iw * ih / area_self
                     if ios >= occlusion_thresh:
                         occluded_mask[i] = True
-                        # The following line of code sets the occlusion
-                        # mask to 'True' for the person causing occlusion.
+                        # The following line of code sets the occlusion mask
+                        # for the person causing to 'True'.
                         occluded_mask[j] = True
                         break
 
