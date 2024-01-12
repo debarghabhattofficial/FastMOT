@@ -45,12 +45,16 @@ class TRTInference:
         self.model = model
         self.batch_size = batch_size
 
-        # load plugin if the model requires one
+        # Original code had the following code block
+        # not commented.
+        # =============================================
+        # Load plugin if the model requires one.
         if self.model.PLUGIN_PATH is not None:
             try:
                 ctypes.cdll.LoadLibrary(self.model.PLUGIN_PATH)
             except OSError as err:
                 raise RuntimeError('Plugin not found') from err
+        # =============================================
 
         # load trt engine or build one if not found
         if not self.model.ENGINE_PATH.exists():

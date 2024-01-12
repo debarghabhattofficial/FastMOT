@@ -9,7 +9,7 @@ import cv2
 
 
 LOGGER = logging.getLogger(__name__)
-WITH_GSTREAMER = True
+WITH_GSTREAMER = False  # Set to 'True' if OpenCV installed from source with GStreamer.
 
 
 class Protocol(Enum):
