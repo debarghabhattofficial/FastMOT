@@ -118,9 +118,9 @@ class OSNetAIN10(ReID):
     METRIC = "euclidean"
 
 
-class ReSNetFC512(ReID):
-    ENGINE_PATH = Path(__file__).parent / 'resnet50_fc512_msmt17.trt'
-    MODEL_PATH = Path(__file__).parent / 'resnet50_fc512_msmt17.onnx'
+class ResNetFC512(ReID):
+    ENGINE_PATH = Path(__file__).parent / "resnet50_fc512_msmt17.trt"
+    MODEL_PATH = Path(__file__).parent / "resnet50_fc512_msmt17.onnx"
     INPUT_SHAPE = (3, 256, 128)
     OUTPUT_LAYOUT = 512
     METRIC = "euclidean"

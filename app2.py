@@ -31,29 +31,8 @@ from utils.general import (
 )
 
 
-def print_model_attributes(model, prefix=''):
-    for name, param in model.named_parameters():
-        print(f"{prefix}Parameter: {name}, Size: {param.size()}")
-        
-    for name, buffer in model.named_buffers():
-        print(f"{prefix}Buffer: {name}, Size: {buffer.size()}")
-        
-    for name, module in model.named_children():
-        print_model_attributes(module, prefix=f"{prefix}{name}.")
+IMG_SIZE = (640, 640)  # (1920, 1080)  # (640, 640)  # (960, 540)
 
-
-def preprocess_image(image):
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, (384,384))
-    image = image.astype(np.float32) / 255.
-    image = (image - mean) / std
-    image = torch.from_numpy(image).float().permute(2, 0, 1).unsqueeze(0)
-    image = image.cuda()
-    image = image.contiguous()
-    return image
 
 DET_DTYPE = np.dtype(
     [('tlbr', float, 4),
@@ -62,28 +41,108 @@ DET_DTYPE = np.dtype(
     align=True
 )  # Copied from fastmot/detector.py.
 
-# def convert_to_structured_array(preds):
-#     """
-#     This method converts the predictions
-#     from the Yolov7 detector to a structured
-#     array.
-#     """
-#     # Extract values from the predicted
-#     # tensors and create a structured array.
-#     joy = [
-#         tuple(
-#             pred_tensor[0, :4].cpu().numpy()
-#         ) + (
-#             int(pred_tensor[0, 4].item()), 
-#             pred_tensor[0, 5].item()
-#         )
-#         for pred_tensor in preds
-#     ]
+
+def letterbox(img,
+              new_shape=(640, 640),  # (960, 540)
+              color=(114, 114, 114),
+              auto=True,
+              scale_up=True,
+              stride=32):
+    """
+    This methods resizes and pads the image while
+    meeting stride-multiple constraints. This is
+    necessary to prevent error while running detection
+    inference through the YOLOv7 model.
+    """
+    # Reisize the image.
+    # Image original shape (heights, width)
+    src_shape = img.shape[:2]
+    # Image new height and width.
+    dst_shape = (new_shape, new_shape) if isinstance(new_shape, int) else new_shape
     
-#     return preds
+    # Calculate the scale ratio based on src_shape
+    # and dest_shape
+    # NOTE: We find the scaling ration ratio along
+    # each dimension (height, width) by diving
+    # dst_shape value by src_shape value, and select 
+    # the minimum of the two.
+    scale_ratio = min(
+        dst_shape[0] / src_shape[0],
+        dst_shape[1] / src_shape[1]
+    )
+    # If scale_up flag is set to False, we only scale
+    # down the image and not scale up, which improves
+    # the validation mAP.
+    if not scale_up:
+        scale_ratio = min(scale_ration, 1.0)
+
+    # Compute padding along each dimesion
+    # (height and width).
+    new_unpad = (
+        int(round(src_shape[1] * scale_ratio)),
+        int(round(src_shape[0] * scale_ratio))
+    )
+    dh = dst_shape[0] - new_unpad[1]  # Height padding.
+    dw = dst_shape[1] - new_unpad[0]  # Width padding.
+    if auto:
+        dw = np.mod(dw, stride)
+        dh = np.mod(dh, stride)
+
+    # Divide the padding into two sides.
+    dw = dw / 2
+    dh = dh / 2
+
+    # Resize the image.
+    resized_img = img.copy()
+    if src_shape[::-1] != new_unpad:
+        resized_img = cv2.resize(
+            img, 
+            new_unpad, 
+            interpolation=cv2.INTER_AREA
+        )
+
+    # Add border.
+    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+    resized_img = cv2.copyMakeBorder(
+        resized_img, 
+        top, bottom, 
+        left, right, 
+        cv2.BORDER_CONSTANT, 
+        value=color
+    )
+
+    return resized_img, scale_ratio, (dw, dh)
+
+
+def preprocess_image(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image1, scale_ratio, dwdh = letterbox(
+        img=image,
+        auto=False
+    )
+    image1 = image1.astype(np.float32) / 255.0
+    image1 = torch.from_numpy(image1).float()
+    image1 = image1.permute(2, 0, 1)
+    image1 = image1.unsqueeze(0)
+    image1 = image1.cuda()
+    image1 = image1.contiguous()
+    return image1, scale_ratio, dwdh
+
+
+def postprocess(boxes,
+                scale_ratio,
+                dwdh):
+    """
+    This method converts the bounding box
+    coordinates from the Yolov7 detector
+    to the original image coordinates.
+    """
+    dwdh = torch.tensor(dwdh * 2).to(boxes.device)
+    boxes = boxes - dwdh
+    boxes = boxes / scale_ratio
+    return boxes.clip_(0, 6400)
 # =============================================
-
-
 
 
 def main():
@@ -154,7 +213,7 @@ def main():
     device = torch.device(
         'cuda' if torch.cuda.is_available() else 'cpu'
     )
-    img_size = (640, 640)
+    img_size = IMG_SIZE  # (1920, 1080)  # (640, 640)
     # =============================================
 
     mot = None
@@ -173,20 +232,12 @@ def main():
         )
         model.eval()
         names = model.names
-        print(f"names: {names}")
-        print("-" * 75)
         # Get number of classes for the model.
-        num_classes =  model.nc 
-        print(f"num_classes: {num_classes}")
-        print("-" * 75)
+        num_classes =  model.nc
         # Get model stride.
         stride = model.stride.max().cpu().numpy()
-        print(f"stride: {stride}")
-        print("-" * 75)
         # Check img size.
         img_size = check_img_size(img_size[0], s=stride)
-        print(f"img_size: {img_size}")
-        print("-" * 75)
         # =============================================
 
         # Original code was not commented.
@@ -197,7 +248,6 @@ def main():
             draw=draw
         )
         mot.reset(stream.cap_dt)
-        # quit()  # DEB
         # =============================================
     if args.txt is not None:
         Path(args.txt).parent.mkdir(
@@ -219,24 +269,14 @@ def main():
                 if args.mot:
                     # Following code written by DEB.
                     # =============================================
-                    # print(f"frame.shape: {frame.shape}")  # DEB
-                    # print("-" * 75)  # DEB
-                    frame_img =  preprocess_image(image=frame)  # DEB
-                    # print(f"frame_img shape: {frame_img.shape}")  # DEB
-                    # print("-" * 75)  # DEB
+                    frame_img, scale_ratio, dwdh =  preprocess_image(image=frame)
+
                     preds = None
                     with torch.no_grad():
-                        preds = model(frame_img)[0]  # DEB
-                    # print(f"preds type: {type(preds)}")  # DEB
-                    # print(f"preds shape: {preds.shape}")  # DEB
-                    # print("-" * 75)  # DEB
+                        preds = model(frame_img)[0]
 
-                    conf_thresh = config.mot_cfg.yolo_detector_cfg.conf_thresh  # DEB
-                    # print(f"conf_thresh: {conf_thresh}")  # DEB
-                    # print("-" * 75)  # DEB
-                    nms_thresh = config.mot_cfg.yolo_detector_cfg.nms_thresh  # DEB
-                    # print(f"nms_thresh: {nms_thresh}")  # DEB
-                    # print("-" * 75)  # DEB
+                    conf_thresh = config.mot_cfg.yolo_detector_cfg.conf_thresh
+                    nms_thresh = config.mot_cfg.yolo_detector_cfg.nms_thresh
 
                     preds = non_max_suppression(
                         prediction=preds, 
@@ -244,58 +284,40 @@ def main():
                         iou_thres=nms_thresh, 
                         classes=[0], 
                         agnostic=True
-                    ) # DEB
-                    # print(f"preds type: {type(preds)}")  # DEB
-                    # print(f"preds shape: {len(preds)}")  # DEB
-                    # print(f"preds:")  # DEB
-                    # pprint(preds)  # DEB
-                    # print("-" * 75)  # DEB
+                    )
 
                     # Extract values from the predicted
                     # tensors and create a structured array.
-                    preds = [
-                        (
-                            tuple(pred_tensor[0, :4].cpu().numpy()),
-                            int(pred_tensor[0, 4].item()), 
-                            pred_tensor[0, 5].item()
-                        )
-                        for pred_tensor in preds
-                    ]
-                    preds = np.array(preds, dtype=DET_DTYPE)  # DEB
-                    preds = preds.view(np.recarray)
-                    # print(f"preds type: {type(preds)}")  # DEB
-                    # print(f"preds shape: {preds.shape}")  # DEB
-                    # print(f"preds:")  # DEB
-                    # pprint(preds)  # DEB
-                    # print("-" * 75)  # DEB
+                    if preds[0].shape[0] > 0:
+                        preds = [
+                            (
+                                tuple(
+                                    postprocess(
+                                        boxes=pred_tensor[0, :4],
+                                        scale_ratio=scale_ratio,
+                                        dwdh=dwdh
+                                    ).cpu().numpy()
+                                ),
+                                1 if int(pred_tensor[0, 5].item()) == 0 else 0, 
+                                pred_tensor[0, 4].item()
+                            )
+                            for pred_tensor in preds
+                        ]
+                        preds = np.array(preds, dtype=DET_DTYPE)
+                        preds = preds.view(np.recarray)
 
-                    # Pass the structured detections to
-                    # the next stage of the MOT pipeline.
-                    mot.step(frame=frame, detections_v7=preds)  # DEB
+                        # Pass the structured detections to
+                        # the next stage of the MOT pipeline.
+                        mot.step(frame=frame, detections_v7=preds)
                     if txt is not None:
                         for track in mot.visible_tracks():
                             tl = track.tlbr[:2] / config.resize_to * stream.resolution
                             br = track.tlbr[2:] / config.resize_to * stream.resolution
                             w, h = br - tl + 1
-                            txt.write(f'{mot.frame_count},{track.trk_id},{tl[0]:.6f},{tl[1]:.6f},'
-                                      f'{w:.6f},{h:.6f},-1,-1,-1\n')
-                    # quit()  # DEB
-                    # continue  # DEB
-                    # =============================================
-                    # Original code was not commented.
-                    # =============================================
-                    # mot.step(frame)
-                    # if txt is not None:
-                    #     for track in mot.visible_tracks():
-                    #         tl = track.tlbr[:2] / config.resize_to * stream.resolution
-                    #         br = track.tlbr[2:] / config.resize_to * stream.resolution
-                    #         w, h = br - tl + 1
-                    #         txt.write(f'{mot.frame_count},{track.trk_id},{tl[0]:.6f},{tl[1]:.6f},'
-                    #                   f'{w:.6f},{h:.6f},-1,-1,-1\n')
-                    # =============================================
-
+                            txt.write(f"{mot.frame_count},{track.trk_id},{tl[0]:.6f},{tl[1]:.6f},"
+                                      f"{w:.6f},{h:.6f},-1,-1,-1\n")
                 if args.show:
-                    cv2.imshow('Video', frame)
+                    cv2.imshow("Video", frame)
                     if cv2.waitKey(100) & 0xFF == 27:
                         break
                 if args.output_uri is not None:

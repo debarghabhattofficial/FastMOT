@@ -12,6 +12,19 @@ from .utils.matching import linear_assignment, greedy_match, fuse_motion, gate_c
 from .utils.rect import as_tlbr, to_tlbr, ios, bbox_ious, find_occluded
 
 
+# Following codes are written by DEB.
+# =====================================================
+from pprint import pprint
+
+# DET_DTYPE = np.dtype(
+#     [('tlbr', float, 4),
+#      ('label', int),
+#      ('conf', float)],
+#     align=True
+# )  # Copied from ../fastmot/detector.py.
+# =====================================================
+
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -132,7 +145,9 @@ class MultiTracker:
         self.flow.init(frame)
         for det in detections:
             state = self.kf.create(det.tlbr)
-            new_trk = Track(0, det.tlbr, state, det.label, self.confirm_hits)
+            new_trk = Track(
+                0, det.tlbr, state, det.label, self.confirm_hits
+            )
             self.tracks[new_trk.trk_id] = new_trk
             LOGGER.debug(f"{'Detected:':<14}{new_trk}")
 
@@ -275,7 +290,21 @@ class MultiTracker:
                 if track.confirmed:
                     LOGGER.info(f"{'Out:':<14}{track}")
                 self._mark_lost(trk_id)
-            track.add_detection(frame_id, next_tlbr, (mean, cov), embeddings[det_id], is_valid)
+            # print(f"frame_id: {frame_id}")  # DEB
+            # print(f"next_tlbr: \n{next_tlbr}")  # DEB
+            # print(f"mean: \n{mean}")  # DEB
+            # print(f"cov: \n{cov}")  # DEB
+            # print(f"embeddings shape: {embeddings.shape}")  # DEB
+            # print(f"embeddings: \n{embeddings}")  # DEB
+            # print(f"is_valid: {is_valid}")  # DEB
+            # print("-" * 75)  # DEB
+            # quit()  # DEB
+            track.add_detection(
+                frame_id, next_tlbr, 
+                (mean, cov), 
+                embeddings[det_id], 
+                is_valid
+            )
 
         # clean up lost tracks
         for trk_id in u_trk_ids:

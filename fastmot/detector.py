@@ -441,7 +441,7 @@ class YOLOV7Detector(Detector):
                  max_area=800_000,
                  min_aspect_ratio=1.2):
         """
-        An oject detector based on YOLO-v7 model.
+        An YOLOv7 object detector model.
         """
         super().__init__(size)
         assert 0 <= conf_thresh <= 1
