@@ -8,9 +8,9 @@
     },
 
     "mot_cfg": {
-        "detector_type": "YOLO",
+        "detector_type": "YOLOv7",
         "detector_frame_skip": 1,
-        "class_ids": [1],
+        "class_ids": [0],
 
         "ssd_detector_cfg": {
             "model": "SSDInceptionV2",
@@ -32,10 +32,17 @@
             "conf_thresh": 0.5,
             "max_area": 800000
         },
+        "yolo_v7_detector_cfg": {
+            "ckpt_path": "fastmot/models/yolov7/yolo_v7_3_1.pt",
+            "conf_thresh": 0.25,
+            "nms_thresh": 0.25,
+            "max_area": 800000,
+            "min_aspect_ratio": 0.6
+        },
 
         "feature_extractor_cfgs": [
             {
-                "model": "OSNet025",
+                "model": "ResNetFC512",
                 "batch_size": 16
             }
         ],

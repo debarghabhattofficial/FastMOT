@@ -22,7 +22,9 @@ class Protocol(Enum):
 
 
 class VideoIO:
-    def __init__(self, size, input_uri,
+    def __init__(self, 
+                 size, 
+                 input_uri,
                  output_uri=None,
                  resolution=(1920, 1080),
                  frame_rate=30,
@@ -96,11 +98,23 @@ class VideoIO:
             Path(self.output_uri).parent.mkdir(parents=True, exist_ok=True)
             output_fps = 1 / self.cap_dt
             if WITH_GSTREAMER:
-                self.writer = cv2.VideoWriter(self._gst_write_pipeline(), cv2.CAP_GSTREAMER, 0,
-                                              output_fps, self.size, True)
+                self.writer = cv2.VideoWriter(
+                    self._gst_write_pipeline(), 
+                    cv2.CAP_GSTREAMER, 
+                    0,
+                    output_fps, 
+                    self.size, 
+                    True
+                )
             else:
-                fourcc = cv2.VideoWriter_fourcc(*'avc1')
-                self.writer = cv2.VideoWriter(self.output_uri, fourcc, output_fps, self.size, True)
+                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+                self.writer = cv2.VideoWriter(
+                    self.output_uri, 
+                    fourcc, 
+                    output_fps, 
+                    self.size, 
+                    True
+                )
 
     @property
     def cap_dt(self):

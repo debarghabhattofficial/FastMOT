@@ -5,7 +5,7 @@ import numpy as np
 import numba as nb
 import cv2
 
-from .detector import SSDDetector, YOLODetector, PublicDetector
+from .detector import SSDDetector, YOLODetector, PublicDetector, YOLOv7Detector
 from .feature_extractor import FeatureExtractor
 from .tracker import MultiTracker
 from .utils import Profiler
@@ -20,6 +20,7 @@ class DetectorType(Enum):
     SSD = 0
     YOLO = 1
     PUBLIC = 2
+    YOLOV7 = 3
 
 
 # Following code was written by Deb.
@@ -29,13 +30,15 @@ from pprint import pprint
 
 
 class MOT:
-    def __init__(self, size,
-                 detector_type='YOLO',
+    def __init__(self, 
+                 size,
+                 detector_type="YOLOV7",
                  detector_frame_skip=5,
-                 class_ids=(1,),
+                 class_ids=(0,),
                  ssd_detector_cfg=None,
                  yolo_detector_cfg=None,
                  public_detector_cfg=None,
+                 yolo_v7_detector_cfg=None,
                  feature_extractor_cfgs=None,
                  tracker_cfg=None,
                  visualizer_cfg=None,
@@ -47,7 +50,7 @@ class MOT:
         ----------
         size : tuple
             Width and height of each frame.
-        detector_type : {'SSD', 'YOLO', 'public'}, optional
+        detector_type : {'SSD', 'YOLO', 'public', 'YOLOV7'}, optional
             Type of detector to use.
         detector_frame_skip : int, optional
             Number of frames to skip for the detector.
@@ -68,6 +71,9 @@ class MOT:
             Visualization configuration.
         draw : bool, optional
             Draw visualizations.
+        device : str, optional
+            Specify device to use for inference.
+            Required for YOLOv7 detector.
         """
         self.size = size
         self.detector_type = DetectorType[detector_type.upper()]
@@ -82,6 +88,8 @@ class MOT:
             yolo_detector_cfg = SimpleNamespace()
         if public_detector_cfg is None:
             public_detector_cfg = SimpleNamespace()
+        if yolo_v7_detector_cfg is None:
+            yolo_v7_detector_cfg = SimpleNamespace()
         if feature_extractor_cfgs is None:
             feature_extractor_cfgs = (SimpleNamespace(),)
         if tracker_cfg is None:
@@ -93,7 +101,13 @@ class MOT:
 
         # Original code wasn't commented.
         # =============================================
-        # LOGGER.info('Loading detector model...')
+        LOGGER.info('Loading detector model...')
+        if self.detector_type == DetectorType.YOLOV7:
+            self.detector = YOLOv7Detector(
+                self.size,
+                self.class_ids,
+                **vars(yolo_v7_detector_cfg),
+            )
         # if self.detector_type == DetectorType.SSD:
         #     self.detector = SSDDetector(
         #         self.size, 
@@ -159,7 +173,7 @@ class MOT:
         self.frame_count = 0
         self.tracker.reset(cap_dt)
 
-    def step(self, frame, detections_v7=None):
+    def step(self, frame):
         """
         Runs multiple object tracker on the next frame.
 
@@ -170,86 +184,40 @@ class MOT:
         """
         occlusion_in_frame = False
         detections = []
-        detections = detections_v7  # DEB
-        # print(f"detections type: {type(detections)}")  # DEB
-        # print(f"detections:")  # DEB
-        # pprint(detections)  # DEB
-        # print("-" * 75)  # DEB
+        detections = self.detector(frame)
         if self.frame_count == 0:
-            # print("Inside 'if' block.")  # DEB
-            # print("-" * 75)  # DEB"
-            # print("At Frame 0")  # DEB
-            # print("-" * 75)  # DEB
-            # detections = self.detector(frame)  # ORIGINAL
-            # TODO: Write your own detection code
-            # using the YoloV7 model.
             self.tracker.init(frame, detections)
         elif self.frame_count % self.detector_frame_skip == 0:
-            # print("Inside 'elif' block.")  # DEB
-            # print("-" * 75)  # DEB"
-            # print(f"At Frame {self.frame_count}")  # DEB
-            # print("-" * 75)  # DEB
             with Profiler("preproc"):
-                # print("At Profiler preproc")  # DEB
-                # self.detector.detect_async(frame)  # ORIGINAL
-                # TODO: Write your own detection code
-                # using the YoloV7 model.
                 pass
 
             with Profiler("detect"):
-                # print("At Profiler detect")  # DEB
                 with Profiler("track"):
-                    # print("At Profiler elif.detect.track")  # DEB
                     self.tracker.compute_flow(frame)
-                # detections = self.detector.postprocess()  # ORIGINAL
-                # TODO: Write your own detection code
-                # using the YoloV7 model.
 
-            with Profiler('extract'):
-                # print("At Profiler extract")  # DEB
-                # print(f"detections type: {type(detections)}")  # DEB
-                # print(f"detections:")  # DEB
-                # pprint(detections)  # DEB
-                # print("-" * 75)  # DEB
+            with Profiler("extract"):
                 cls_bboxes = self._split_bboxes_by_cls(
                     detections.tlbr, 
                     detections.label,
                     self.class_ids
                 )
-                # print(f"cls_bboxes type: {type(cls_bboxes)}")  # DEB
-                # print(f"cls_bboxes:")  # DEB
-                # pprint(cls_bboxes)  # DEB
-                # print("-" * 75)  # DEB
-                # quit()  # DEB
                 for extractor, bboxes in zip(self.extractors, cls_bboxes):
                     extractor.extract_async(frame, bboxes)
 
                 with Profiler("track", aggregate=True):
-                    # print("At Profiler elif.extract.track")  # DEB
                     self.tracker.apply_kalman()
 
                 embeddings = []
                 for extractor in self.extractors:
                     embeddings.append(extractor.postprocess())
                 embeddings = np.concatenate(embeddings) if len(embeddings) > 1 else embeddings[0]
-                # print(f"embeddings: \n{embeddings}")  # DEB
-                # print("-" * 75)  # DEB
-                # quit()  # DEB
 
             with Profiler("assoc"):
-                # Original FastMOT code (before Oct experiments)
-                # did not return the occlusion_in_frame (Boolean)
-                # variable.
-                # print("At Profiler assoc")  # DEB
                 occlusion_in_frame = self.tracker.update(
                     self.frame_count, detections, embeddings
                 )
         else:
-            # print("Inside 'else' block.")  # DEB
-            # print(f"At Frame {self.frame_count}")  # DEB
-            # print("-" * 75)  # DEB
             with Profiler("track"):
-                # print("At Profiler track")
                 self.tracker.track(frame)
 
         if self.draw:

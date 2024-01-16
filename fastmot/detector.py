@@ -14,6 +14,14 @@ from .utils.rect import as_tlbr, aspect_ratio, to_tlbr, get_size, area
 from .utils.rect import enclosing, multi_crop, iom, diou_nms
 from .utils.numba import find_split_indices
 
+# Following code was written by DEB.
+# ==================================================
+import torch
+from .yolov7.models.experimental import attempt_load
+from .yolov7.utils.general import check_img_size
+from .yolov7.utils.general import non_max_suppression
+# ==================================================
+
 
 DET_DTYPE = np.dtype(
     [('tlbr', float, 4),
@@ -218,7 +226,8 @@ class SSDDetector(Detector):
 
 
 class YOLODetector(Detector):
-    def __init__(self, size,
+    def __init__(self, 
+                 size,
                  class_ids,
                  model='YOLOv4',
                  conf_thresh=0.25,
@@ -248,7 +257,6 @@ class YOLODetector(Detector):
             Set to 0.1 for square shaped objects.
         """
         super().__init__(size)
-        self.model = models.YOLO.get_model(model)
         assert 0 <= conf_thresh <= 1
         self.conf_thresh = conf_thresh
         assert 0 <= nms_thresh <= 1
@@ -431,11 +439,11 @@ class PublicDetector(Detector):
         return detections
 
 
-class YOLOV7Detector(Detector):
+class YOLOv7Detector(Detector):
     def __init__(self,
                  size,
-                 class_ids,
-                 model="YOLOv7",
+                 class_ids=(0,),
+                 ckpt_path=None,
                  conf_thresh=0.25,
                  nms_thresh=0.5,
                  max_area=800_000,
@@ -452,172 +460,40 @@ class YOLOV7Detector(Detector):
         self.max_area = max_area
         assert min_aspect_ratio >= 0
         self.min_aspect_ratio = min_aspect_ratio
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
+        self.model = attempt_load(
+            weights=ckpt_path, 
+            map_location=self.device
+        )
+        self.model.eval()
 
-        self.label_mask = np.zeros(self.model.NUM_CLASSES, dtype=np.bool_)
-        try:
-            self.label_mask[tuple(class_ids),] = True
-        except IndexError as err:
-            raise ValueError('Unsupported class IDs') from err
-
-    def bucket_callback(self, 
-                        msg):
-        self.bucket_presence = msg.data
-
-    def load_image_into_numpy_array(self, 
-                                    image):
-        
-        ar = image.get_data()
-        ar = ar[:, :, 0:3]
-        (im_height, im_width, channels) = image.get_data().shape
-        return np.array(ar).reshape((im_height, im_width, 3)).astype(np.uint8)
-    
-    def load_depth_into_numpy_array(self, 
-                                    depth):
-        ar = depth.get_data()
-        ar = ar[:, :, 0:4]
-        (im_height, im_width, channels) = depth.get_data().shape
-        return np.array(ar).reshape((im_height, im_width, channels)).astype(np.float32)
-    
-    
-    def zed_depth_callback(self, 
-                           msg):
-        depth_image = np.frombuffer(msg.data,np.uint8)
-        depth_image = cv2.imdecode(depth_image,cv2.IMREAD_UNCHANGED)
-        depth_image = depth_image.astype(float)
-        depth_image[depth_image > 150] = np.nan
-        self.depth_image = depth_image
-
-    def status_callback(self, 
-                        data):
-        self.follow = data.data
-        if self.follow == True and self.previous == False:
-            self.start = True
-        elif self.follow == False and self.previous == True:
-            self.start = False
-        else:
-            self.start= False
-        self.previous = self.follow
-
-    def image_callback(self, 
-                       data):
-        if 1:#self.follow:
-            img_np = np.frombuffer(data.data, np.uint8)
-            self.cv_image = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
-            self.img_beat = True
-
-    def letterbox(self, 
-                  img, 
-                  new_shape=(960, 544), 
-                  auto=True, 
-                  scaleup=True, 
-                  stride=32):
-        
-        # Resize and pad image while meeting stride-multiple constraints
-        shape = img.shape[:2]  # current shape [height, width]
-
-        if isinstance(new_shape, int):
-            new_shape = (new_shape, new_shape)
-            
-        if len(img.shape) == 3:
-            padded_img = np.ones((new_shape[0], new_shape[1], 3)) * 114.0
-        else:
-            padded_img = np.ones(new_shape) * 114.0
-
-        # Scale ratio (new / old)
-        r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
-        
-        if not scaleup:  # only scale down, do not scale up (for better val mAP)
-            r = min(r, 1.0)
-
-        # Compute padding
-        new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
-        dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
-        
-        if auto:  # minimum rectangle
-            dw, dh = np.mod(dw, stride), np.mod(dh, stride)  # wh padding
-            
-        dw /= 2  # divide padding into 2 sides
-        dh /= 2
-            
-        resized_img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_AREA).astype(np.float32) 
-        padded_img[
-            int(dh): int(img.shape[0] * r + dh), 
-            int(dw) : int(img.shape[1] * r + dw)
-        ] = resized_img
-        padded_img = padded_img[:, :, ::-1]
-        padded_img /= 255.0
-        padded_img = padded_img.transpose((2, 0, 1))
-        padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
-
-        return padded_img, r, (dw, dh)
-    
-    def postprocess(self, 
-                    boxes,
-                    r,
-                    dwdh):
-        dwdh = torch.tensor(dwdh*2).to(boxes.device)
-        boxes -= dwdh
-        boxes /= r
-        return boxes
-
-    def localization_callback(self, 
-                              msg):
-        self.wheel_speed = msg.twist.twist.linear.x
-        self.wheel_speed = self.wheel_speed*3.6
-
-    def distance_zed(self, 
-                     bb,
-                     depth_image):
-        shrink_factor = 0.2  # Example: shrink the box by 20%
-        new_width = (bb[2] - bb[0]) * shrink_factor
-        new_height = (bb[3] - bb[1]) * shrink_factor
-        smaller_bb = [bb[0] + new_width/2, bb[1] + new_height/2, bb[2] - new_width/2, bb[3] - new_height/2]
-
-        # Extract depth information within the smaller bounding box
-        bb_depth = depth_image[int(smaller_bb[1]):int(smaller_bb[3]), int(smaller_bb[0]):int(smaller_bb[2])]
-        total_points = bb_depth.size
-        valid_depths = bb_depth[np.isfinite(bb_depth)]
-        valid_points = valid_depths.size  
-        if valid_depths.size > 0:
-            valid_percentage = valid_points/total_points
-            # Calculate the median depth
-            median_depth = np.median(valid_depths)
-        else:
-            valid_percentage = 0
-            median_depth = 0
-        median_depth = median_depth/10
-        return median_depth,valid_percentage
-
-    def _create_letterbox2(self,
-                           img,
-                           new_shape=(960, 540),
-                           auto=True,
-                           scale_up=True,
-                           stride=32):
+    def _create_letterbox(self,
+                          img,
+                          new_shape=(640, 640),  # (960, 540)
+                          color=(114, 114, 114),
+                          auto=True,
+                          scale_up=True,
+                          stride=32):
         """
-        This methods resizes and pads the imae while
-        meeting stride-multiple constraints.
+        This methods resizes and pads the image while
+        meeting stride-multiple constraints. This is
+        necessary to prevent error while running detection
+        inference through the YOLOv7 model.
         """
         # Reisize the image.
         # Image original shape (heights, width)
         src_shape = img.shape[:2]
         # Image new height and width.
         dst_shape = (new_shape, new_shape) if isinstance(new_shape, int) else new_shape
-
-        # Create default padding placeholder for the image.
-        padded_img = None
-        if len(img.shape) == 3:
-            padded_img = np.ones(
-                (dst_shape[0], dst_shape[1], 3)
-            ) * 114.0
-        else:
-            padded_img = np.ones(dst_shape) * 114.0
-
+        
         # Calculate the scale ratio based on src_shape
-        # and dest_shape.
+        # and dest_shape
         # NOTE: We find the scaling ration ratio along
-        # each dimension (height, width) and select the
-        # minimum of the two.
+        # each dimension (height, width) by diving
+        # dst_shape value by src_shape value, and select 
+        # the minimum of the two.
         scale_ratio = min(
             dst_shape[0] / src_shape[0],
             dst_shape[1] / src_shape[1]
@@ -639,77 +515,145 @@ class YOLOV7Detector(Detector):
         if auto:
             dw = np.mod(dw, stride)
             dh = np.mod(dh, stride)
+
         # Divide the padding into two sides.
         dw = dw / 2
         dh = dh / 2
 
         # Resize the image.
-        resized_img = cv2.resize(
-            img, new_unpad, interpolation=cv2.INTER_AREA
-        ).astype(np.float32)
+        resized_img = img.copy()
+        if src_shape[::-1] != new_unpad:
+            resized_img = cv2.resize(
+                img, 
+                new_unpad, 
+                interpolation=cv2.INTER_AREA
+            )
 
-        # Fill the padding placeholder with the resized image.
-        padded_img[
-            int(dh):int(img.shape[0] * scale_ratio + dh),
-            int(dw):int(img.shape[1] * scale_ratio + dw)
-        ] = resized_img
-        padded_img = padded_img[:, :, ::-1]
-        padded_img = padded_img / 255.0
-        padded_img = padded_img.transpose((2, 0, 1))
-        padded_img = np.ascontiguousarray(
-            padded_img, dtype=np.float32
+        # Add border.
+        top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+        left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+        resized_img = cv2.copyMakeBorder(
+            resized_img, 
+            top, bottom, 
+            left, right, 
+            cv2.BORDER_CONSTANT, 
+            value=color
         )
 
-        return padded_img, scale_ratio, (dw, dh)
+        return resized_img, scale_ratio, (dw, dh)
 
-    def postprocess(self, 
+    def _preprocess(self, frame):
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame, scale_ratio, dwdh = self._create_letterbox(
+            img=frame,
+            auto=False
+        )
+        frame = frame.astype(np.float32) / 255.0
+        frame = torch.from_numpy(frame).float()
+        frame = frame.permute(2, 0, 1)
+        frame = frame.unsqueeze(0)
+        frame = frame.to(self.device)
+        frame = frame.contiguous()
+        return frame, scale_ratio, dwdh
+
+    def _filter_dets(self, 
+                     detections, 
+                     conf_thresh, 
+                     nms_thresh,
+                     scale_ratio,
+                     dwdh,
+                     class_id=0,
+                     replacement_id=1):
+        """
+        This method applies non max suppression to filter 
+        out the bounding boxes that have low confidence 
+        score, or do not belong to the required object class.
+
+        INPUT:
+        detections: A list tensors, where each tensor 
+            contains a multiple of 7 float32 numbers 
+            in the order of [
+                x, y, w, h, 
+                box_confidence, 
+                class_id, 
+                class_prob
+            ].
+
+        OUTPUT:
+        detections: A list of numpy record arrays where each 
+            each record array has the ollowing attributes:
+            (tlbr, label, conf).
+        """
+        # Apply non max suppression.
+        detections = non_max_suppression(
+            prediction=detections, 
+            conf_thres=conf_thresh, 
+            iou_thres=nms_thresh, 
+            classes=[class_id], 
+            agnostic=True
+        )
+
+        # Create list of numpy record arrays.
+        if detections[0].shape[0] > 0:
+            detections = [
+                (
+                    tuple(
+                        self.postprocess(
+                            boxes=detection[0, :4],
+                            scale_ratio=scale_ratio,
+                            dwdh=dwdh
+                        ).cpu().numpy()
+                    ),
+                    replacement_id if int(detection[0, 5].item()) == class_id else int(detection[0, 5].item()),
+                    detection[0, 4].item()
+                )
+                for detection in detections
+            ]
+            detections = np.array(detections, dtype=DET_DTYPE)
+            detections = detections.view(np.recarray)
+        else:
+            detections = np.empty((0, ), dtype=DET_DTYPE)
+            detections = detections.view(np.recarray)
+
+        return detections
+
+    def postprocess(self,
                     boxes,
                     scale_ratio,
                     dwdh):
+        """
+        This method converts the bounding box
+        coordinates from the Yolov7 detector
+        to the original image coordinates.
+        """
         dwdh = torch.tensor(dwdh * 2).to(boxes.device)
         boxes = boxes - dwdh
         boxes = boxes / scale_ratio
-        return boxes
+        return boxes.clip_(0, 6400)
 
-    def _create_letterbox(self):
-        src_size = np.array(self.size)
-        dst_size = np.array(self.model.INPUT_SHAPE[:0:-1])
-        if self.model.LETTERBOX:
-            scale_factor = min(dst_size / src_size)
-            scaled_size = np.rint(
-                src_size * scale_factor
-            ).astype(int)
-            img_offset = (dst_size - scaled_size) / 2
-            roi = np.s_[
-                :, img_offset[1]:img_offset[1] + scaled_size[1],
-                img_offset[0]:img_offset[0] + scaled_size[0]
-            ]
-            upscaled_sz = np.rint(
-                dst_size / scale_factor
-            ).astype(int)
-            bbox_offset = (upscaled_sz - src_size) / 2
-        else:
-            roi = np.s_[:]
-            upscaled_sz = src_size
-            bbox_offset = np.zeros(2)
-        inp_reshaped = self.backend.input.device.reshape(
-            self.model.INPUT_SHAPE
+    def detect_async(self, frame):
+        """Detects objects asynchronously."""
+        # Preprocess the image frame before passing
+        # it to the detector.
+        pp_frame, scale_ratio, \
+            dwdh =  self._preprocess(frame=frame)
+        
+        # Get the detections from the detector.
+        det_out = None
+        with torch.no_grad():
+            det_out = self.model(pp_frame)[0]
+        
+        # Filter the detections.
+        detections = self._filter_dets(
+            detections=det_out,
+            conf_thresh=self.conf_thresh,
+            nms_thresh=self.nms_thresh,
+            scale_ratio=scale_ratio,
+            dwdh=dwdh
         )
-        inp_reshaped[:] = 0.5 # initial value for letterbox
-        inp_handle = inp_reshaped[roi]
-        return inp_handle, upscaled_sz, bbox_offset
 
-    def _preprocess(self, frame):
-        zoom = np.roll(
-            self.inp_handle.shape, -1
-        ) / frame.shape
-        with self.backend.stream:
-            frame_dev = cp.asarray(frame)
-            # resize
-            small_dev = cupyx.scipy.ndimage.zoom(frame_dev, zoom, order=1, mode='opencv', grid_mode=True)
-            # BGR to RGB
-            rgb_dev = small_dev[..., ::-1]
-            # HWC -> CHW
-            chw_dev = rgb_dev.transpose(2, 0, 1)
-            # normalize to [0, 1] interval
-            cp.multiply(chw_dev, 1 / 255., out=self.inp_handle)
+        return detections
+
+    def __call__(self, frame):
+        """Detect objects synchronously."""
+        return self.detect_async(frame)
