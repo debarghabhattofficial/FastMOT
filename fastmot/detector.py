@@ -639,9 +639,9 @@ class YOLOv7Detector(Detector):
             dwdh =  self._preprocess(frame=frame)
         
         # Get the detections from the detector.
-        det_out = None
+        detections = None
         with torch.no_grad():
-            det_out = self.model(pp_frame)[0]
+            detections = self.model(pp_frame)[0]
         
         # Filter the detections.
         detections = self._filter_dets(
