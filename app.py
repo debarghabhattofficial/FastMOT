@@ -7,6 +7,8 @@ import logging
 import json
 import cv2
 
+import numpy as np
+
 import fastmot
 import fastmot.models
 from fastmot.utils import ConfigDecoder, Profiler
@@ -43,7 +45,7 @@ def main():
     if args.txt is not None and not args.mot:
         raise parser.error('argument -t/--txt: not allowed without argument -m/--mot')
 
-    # set up logging
+    # Set up logging.
     logging.basicConfig(format='%(asctime)s [%(levelname)8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     logger = logging.getLogger(fastmot.__name__)
     if args.quiet:
@@ -53,26 +55,37 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
-    # load config file
+    # Load config file.
     with open(args.config) as cfg_file:
         config = json.load(cfg_file, cls=ConfigDecoder, object_hook=lambda d: SimpleNamespace(**d))
 
-    # load labels if given
+    # Load labels if given.
     if args.labels is not None:
         with open(args.labels) as label_file:
             label_map = label_file.read().splitlines()
             fastmot.models.set_label_map(label_map)
 
-    stream = fastmot.VideoIO(config.resize_to, args.input_uri, args.output_uri, **vars(config.stream_cfg))
+    stream = fastmot.VideoIO(
+        size=config.resize_to, 
+        input_uri=args.input_uri, 
+        output_uri=args.output_uri, 
+        **vars(config.stream_cfg)
+    )
 
     mot = None
     txt = None
     if args.mot:
         draw = args.show or args.output_uri is not None
-        mot = fastmot.MOT(config.resize_to, **vars(config.mot_cfg), draw=draw)
+        mot = fastmot.MOT(
+            config.resize_to, 
+            **vars(config.mot_cfg), 
+            draw=draw
+        )
         mot.reset(stream.cap_dt)
     if args.txt is not None:
-        Path(args.txt).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.txt).parent.mkdir(
+            parents=True, exist_ok=True
+        )
         txt = open(args.txt, 'w')
     if args.show:
         cv2.namedWindow('Video', cv2.WINDOW_AUTOSIZE)
@@ -87,29 +100,28 @@ def main():
                     break
 
                 if args.mot:
-                    mot.step(frame)
+                    mot.step(frame=frame)
                     if txt is not None:
                         for track in mot.visible_tracks():
                             tl = track.tlbr[:2] / config.resize_to * stream.resolution
                             br = track.tlbr[2:] / config.resize_to * stream.resolution
                             w, h = br - tl + 1
-                            txt.write(f'{mot.frame_count},{track.trk_id},{tl[0]:.6f},{tl[1]:.6f},'
-                                      f'{w:.6f},{h:.6f},-1,-1,-1\n')
-
+                            txt.write(f"{mot.frame_count},{track.trk_id},{tl[0]:.6f},{tl[1]:.6f},"
+                                      f"{w:.6f},{h:.6f},-1,-1,-1\n")
                 if args.show:
-                    cv2.imshow('Video', frame)
+                    cv2.imshow("Video", frame)
                     if cv2.waitKey(100) & 0xFF == 27:
                         break
                 if args.output_uri is not None:
                     stream.write(frame)
     finally:
-        # clean up resources
+        # Clean up resources.
         if txt is not None:
             txt.close()
         stream.release()
         cv2.destroyAllWindows()
 
-    # timing statistics
+    # Timing statistics
     if args.mot:
         avg_fps = round(mot.frame_count / prof.duration)
         logger.info('Average FPS: %d', avg_fps)
