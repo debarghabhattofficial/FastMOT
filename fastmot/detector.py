@@ -498,7 +498,7 @@ class YOLOv7Detector(Detector):
         
         # Calculate the scale ratio based on src_shape
         # and dest_shape
-        # NOTE: We find the scaling ration ratio along
+        # NOTE: We find the scaling ratio along
         # each dimension (height, width) by diving
         # dst_shape value by src_shape value, and select 
         # the minimum of the two.
