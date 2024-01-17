@@ -9,7 +9,7 @@ import cupyx.scipy.ndimage
 import cv2
 
 from . import models
-from .utils import TRTInference
+from .utils import TRTInference, YOLOv7TRTInference
 from .utils.rect import as_tlbr, aspect_ratio, to_tlbr, get_size, area
 from .utils.rect import enclosing, multi_crop, iom, diou_nms
 from .utils.numba import find_split_indices
@@ -20,6 +20,8 @@ import torch
 from .yolov7.models.experimental import attempt_load
 from .yolov7.utils.general import check_img_size
 from .yolov7.utils.general import non_max_suppression
+
+from pprint import pprint
 # ==================================================
 
 
@@ -257,6 +259,7 @@ class YOLODetector(Detector):
             Set to 0.1 for square shaped objects.
         """
         super().__init__(size)
+        self.model = models.YOLO.get_model(model)
         assert 0 <= conf_thresh <= 1
         self.conf_thresh = conf_thresh
         assert 0 <= nms_thresh <= 1
@@ -444,6 +447,7 @@ class YOLOv7Detector(Detector):
                  size,
                  class_ids=(0,),
                  ckpt_path=None,
+                 engine_path=None,
                  conf_thresh=0.25,
                  nms_thresh=0.5,
                  max_area=800_000,
@@ -468,10 +472,14 @@ class YOLOv7Detector(Detector):
             map_location=self.device
         )
         self.model.eval()
+        self.backend = YOLOv7TRTInference(
+            engine_path=engine_path,
+            device=self.device
+        )
 
     def _create_letterbox(self,
                           img,
-                          new_shape=(640, 640),  # (960, 540)
+                          new_shape=(960, 960),
                           color=(114, 114, 114),
                           auto=True,
                           scale_up=True,
@@ -557,64 +565,22 @@ class YOLOv7Detector(Detector):
         return frame, scale_ratio, dwdh
 
     def _filter_dets(self, 
-                     detections, 
-                     conf_thresh, 
-                     nms_thresh,
-                     scale_ratio,
-                     dwdh,
+                     detections,
                      class_id=0,
                      replacement_id=1):
         """
-        This method applies non max suppression to filter 
-        out the bounding boxes that have low confidence 
-        score, or do not belong to the required object class.
+        This method filters the bounding boxes that have
+        a higher confidence score than the threshold value.
 
-        INPUT:
-        detections: A list tensors, where each tensor 
-            contains a multiple of 7 float32 numbers 
-            in the order of [
-                x, y, w, h, 
-                box_confidence, 
-                class_id, 
-                class_prob
-            ].
-
-        OUTPUT:
-        detections: A list of numpy record arrays where each 
-            each record array has the ollowing attributes:
-            (tlbr, label, conf).
+        The method generates a list of numpy record arrays 
+        where each record array has the ollowing attributes:
+        (tlbr, label, conf).
         """
-        # Apply non max suppression.
-        detections = non_max_suppression(
-            prediction=detections, 
-            conf_thres=conf_thresh, 
-            iou_thres=nms_thresh, 
-            classes=[class_id], 
-            agnostic=True
-        )
-
-        # Create list of numpy record arrays.
-        if detections[0].shape[0] > 0:
-            detections = [
-                (
-                    tuple(
-                        self.postprocess(
-                            boxes=detection[0, :4],
-                            scale_ratio=scale_ratio,
-                            dwdh=dwdh
-                        ).cpu().numpy()
-                    ),
-                    replacement_id if int(detection[0, 5].item()) == class_id else int(detection[0, 5].item()),
-                    detection[0, 4].item()
-                )
-                for detection in detections
-            ]
-            detections = np.array(detections, dtype=DET_DTYPE)
-            detections = detections.view(np.recarray)
-        else:
-            detections = np.empty((0, ), dtype=DET_DTYPE)
-            detections = detections.view(np.recarray)
-
+        # Filter detections based on confidence.
+        detections = detections[detections["conf"] >= self.conf_thresh]  # 
+        detections = detections[detections["label"] == class_id]  # 
+        detections["label"] = replacement_id
+        detections = detections.view(np.recarray)
         return detections
 
     def postprocess(self,
@@ -637,20 +603,29 @@ class YOLOv7Detector(Detector):
         # it to the detector.
         pp_frame, scale_ratio, \
             dwdh =  self._preprocess(frame=frame)
-        
-        # Get the detections from the detector.
-        detections = None
-        with torch.no_grad():
-            detections = self.model(pp_frame)[0]
+
+        # Get output from the detector TRT engine and 
+        # postprocess to extract the detections.
+        det_boxes, det_scores, \
+            det_classes = self.backend.infer_async(
+                frame=pp_frame, device=self.device
+            )
+        det_boxes = [
+            self.postprocess(
+                boxes=det_box, 
+                scale_ratio=scale_ratio, 
+                dwdh=dwdh
+            ).tolist()
+            for det_box in det_boxes
+        ]
+        detections = [
+            (tlbr, label, conf) 
+            for tlbr, label, conf in zip(det_boxes, det_classes, det_scores)
+        ]
+        detections = np.array(detections, dtype=DET_DTYPE)
         
         # Filter the detections.
-        detections = self._filter_dets(
-            detections=det_out,
-            conf_thresh=self.conf_thresh,
-            nms_thresh=self.nms_thresh,
-            scale_ratio=scale_ratio,
-            dwdh=dwdh
-        )
+        detections = self._filter_dets(detections=detections)
 
         return detections
 

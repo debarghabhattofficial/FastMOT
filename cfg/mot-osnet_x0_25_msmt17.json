@@ -34,6 +34,7 @@
         },
         "yolo_v7_detector_cfg": {
             "ckpt_path": "fastmot/models/yolov7/yolo_v7_3_1.pt",
+            "engine_path": "fastmot/models/yolov7/yolo_v7_3_1.trt",
             "conf_thresh": 0.25,
             "nms_thresh": 0.25,
             "max_area": 800000,

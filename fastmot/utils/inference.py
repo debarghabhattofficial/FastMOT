@@ -4,6 +4,20 @@ import cupyx
 import tensorrt as trt
 
 
+# Following code was written by DEB.
+# ================================================
+import torch
+import numpy as np
+
+from collections import OrderedDict, namedtuple
+
+Binding = namedtuple(
+    "Binding", 
+    ("name", "dtype", "shape", "data", "ptr")
+)
+# ================================================
+
+
 class HostDeviceMem:
     def __init__(self, size, dtype):
         self.size = size
@@ -129,3 +143,71 @@ class TRTInference:
     def get_infer_time(self):
         self.end.synchronize()
         return cp.cuda.get_elapsed_time(self.start, self.end)
+
+
+class YOLOv7TRTInference:
+    # Initialize TensorRT.
+    TRT_LOGGER = trt.Logger(trt.Logger.INFO)
+    trt.init_libnvinfer_plugins(TRT_LOGGER, namespace="")
+
+    def __init__(self, 
+                 engine_path, 
+                 batch_size=1, 
+                 device="cpu"):
+        self.batch_size = batch_size
+        self.device = device
+
+        # Load trt engine.
+        runtime = trt.Runtime(YOLOv7TRTInference.TRT_LOGGER)
+        self.engine = None
+        with open(engine_path, "rb") as engine_file:
+            self.engine = runtime.deserialize_cuda_engine(engine_file.read())
+        if self.engine is None:
+            raise RuntimeError("Unable to load the engine file.")
+
+        # Create execution context.
+        self.context = self.engine.create_execution_context()
+        self.context.set_binding_shape(
+            0, (self.batch_size, 3, 960, 960)
+        )
+
+        # Allocate buffers.
+        self.bindings = OrderedDict()
+        for index in range(self.engine.num_bindings):
+            name = self.engine.get_binding_name(index)
+            dtype = trt.nptype(self.engine.get_binding_dtype(index))
+            shape = tuple(self.context.get_binding_shape(index))
+            data = torch.from_numpy(
+                np.empty(shape, dtype=np.dtype(dtype))
+            ).to(self.device)
+            self.bindings[name] = Binding(
+                name, 
+                dtype, 
+                shape, 
+                data, 
+                int(data.data_ptr())
+            )
+            self.binding_addrs = OrderedDict(
+                (n, d.ptr) for n, d in self.bindings.items()
+            )
+        
+    def infer_async(self, 
+                    frame, 
+                    device=None):
+        # Load frame to device.
+        self.binding_addrs["images"] = int(frame.data_ptr())
+        self.context.execute_v2(list(self.binding_addrs.values()))
+
+        # Get inference results.
+        num_dets = self.bindings["num_dets"].data
+        det_boxes = self.bindings["det_boxes"].data
+        det_boxes = det_boxes[0, :num_dets[0][0]]
+        det_scores = self.bindings["det_scores"].data
+        det_scores = det_scores[0, :num_dets[0][0]]
+        det_classes = self.bindings["det_classes"].data
+        det_classes = det_classes[0, :num_dets[0][0]]
+
+        return det_boxes, det_scores, det_classes
+
+    def infer(self, frame, device=None):
+        return self.infer_async(frame=frame, device=device)

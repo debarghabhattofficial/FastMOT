@@ -169,20 +169,6 @@ Modify paths, # classes, input shape, and anchors according to your Darknet cfg 
 """
 
 
-class YOLOv7(YOLO):
-    ENGINE_PATH = Path(__file__).parent / "yolo_v7_3_1.trt"
-    MODEL_PATH = Path(__file__).parent /  "yolo_v7_3_1.onnx"
-    NUM_CLASSES = 1
-    LETTERBOX = True
-    NEW_COORDS = True
-    INPUT_SHAPE = (3, 640, 640)
-    LAYER_FACTORS = [8, 16, 32]
-    SCALES = [2.0, 2.0, 2.0]
-    ANCHORS = [[12,16, 19,36, 40,28],
-               [36,75, 76,55, 72,146],
-               [142,110, 192,243, 459,401]]
-
-
 class YOLOv4CSP(YOLO):
     ENGINE_PATH = Path(__file__).parent / 'yolov4-csp.trt'
     MODEL_PATH = Path(__file__).parent /  'yolov4-csp.onnx'
@@ -312,3 +298,23 @@ class YOLOv3Tiny(YOLO):
     SCALES = [1., 1.]
     ANCHORS = [[81,82, 135,169, 344,319],
                [10,14, 23,27, 37,58]]
+
+
+# Following code was written by DEB.
+# =======================================================
+class YOLOv7:
+    ENGINE_PATH = Path(__file__).parent / "yolo_v7_3_1.trt"
+    print(f"ENGINE_PATH: {ENGINE_PATH}")  # DEB
+    print("-" * 75)  # DEB"
+    MODEL_PATH = Path(__file__).parent /  "yolo_v7_3_1.onnx"
+    print(f"MODEL_PATH: {MODEL_PATH}")  # DEB
+    print("-" * 75)  # DEB
+    NUM_CLASSES = 1
+    # LETTERBOX = True
+    # NEW_COORDS = True
+    INPUT_SHAPE = (3, 640, 640)
+    # LAYER_FACTORS = [8, 16, 32]
+    # SCALES = [2.0, 2.0, 2.0]
+    # ANCHORS = [[12,16, 19,36, 40,28],
+    #            [36,75, 76,55, 72,146],
+    #            [142,110, 192,243, 459,401]]
